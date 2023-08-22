@@ -1,9 +1,19 @@
+import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
+import {CompatibilityInsightManager} from "./managers/CompatibilityInsightManager"
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+admin.initializeApp();
+
+export const testFunction = functions.https.onRequest((request, response) => {
+    functions.logger.info("Hello logs!", {structuredData: true}); // you can log to firebase (for debugging your functions) with this approach
+    response.send({
+        "hello": "world",
+        "dimensionalTest": true,
+    });
+});
+
+export const fetchCompatibilityInsights = functions.https.onRequest(async (request, response) => {
+    const compatibilityInsights = await CompatibilityInsightManager.computeCompatibiliytInsights(request.body.user1Uid, request.body.user2Uid);
+    response.send(compatibilityInsights);
+});
+
