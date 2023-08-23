@@ -20,4 +20,6 @@ export interface CompatibilityInsightComputeData {
     q3q3AnalysisString: string
     q3q4AnalysisString: string
     q4q4AnalysisString: string
+    isNew: false
+    slug: string
 }

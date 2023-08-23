@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import {CompatibilityInsightManager} from "./managers/CompatibilityInsightManager"
+import {CompatibilityInsightManager} from "./managers/CompatibilityInsightManager";
+import {MockDataManager} from "./managers/MockDataManager";
 
 admin.initializeApp();
 
@@ -17,3 +18,7 @@ export const fetchCompatibilityInsights = functions.https.onRequest(async (reque
     response.send(compatibilityInsights);
 });
 
+export const populateInitialDB = functions.https.onRequest(async (request, response) => {
+    await MockDataManager.createMockData();
+    response.send("OK");
+});
