@@ -4,19 +4,13 @@ import {FirestoreManager} from "./FirestoreManager";
 import {ScaleScore} from "../models/ScaleScore";
 import {CompatibilityInsightComputeData} from "../models/CompatibilityInsightData";
 import {AxisData, TwoByTwoGridData} from "../models/TwoByTwoGridData";
+import {Quadrant} from "../models/Quadrant";
 
 export class CompatibilityInsightManager {
     public static async computeCompatibiliytInsights(
         user1Uid: string,
         user2Uid: string
     ): Promise<CompatibilityInsight[]> {
-        enum Quadrant {
-            q1,
-            q2,
-            q3,
-            q4
-        }
-
         functions.logger.info(`Computing compatibility insights between users ${user1Uid} and ${user2Uid}`, {structuredData: true}); // you can log to firebase (for debugging your functions) with this approach
 
         // here's a snippet to fetch a given user's scores
