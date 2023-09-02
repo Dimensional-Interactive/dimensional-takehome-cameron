@@ -33,10 +33,13 @@ export class CompatibilityInsightManager {
 
         return compatibilityInsights;
 
+        // MARK: Helper functions
         function createCompatibilityInsight(data: CompatibilityInsightComputeData): CompatibilityInsight {
             const xAxisSlug = data.xAxisTraitSlug;
             const yAxisSlug = data.yAxisTraitSlug;
 
+            // If a user had a large number of Scale Scores, the default find method might not be the most
+            // efficient way to find what we're looking for. Fine in this simple case
             const user1XScore = user1ScaleScores.find((element) => element.scaleSlug == xAxisSlug)?.score;
             const user1YScore = user1ScaleScores.find((element) => element.scaleSlug == yAxisSlug)?.score;
             const user1Quadrant = getQuadrant(user1XScore, user1YScore);
@@ -51,8 +54,8 @@ export class CompatibilityInsightManager {
                     if (typeof data.analysisMarkdownString == "string") {
                         return data.analysisMarkdownString;
                     } else {
-                        // This should fail more gracefully. Log the type and throw an error
-                        return "";
+                        // In prod, this error would be more specific
+                        throw new Error("analysisMarkdownString is null or undefined");
                     }
                 }(),
                 gridData: createGridData(user1XScore, user1YScore, user2XScore, user2YScore, data),
@@ -61,6 +64,9 @@ export class CompatibilityInsightManager {
             return insight;
         }
 
+        // I chose to assign a default value here to demonstrate another way of dealing with missing values.
+        // Depending on the particular feature being implemented, it may be better to throw an error with some
+        // info on what is missing, as I do in getQuadrant
         function createGridData(user1XScore: number | undefined = 0.5,
             user1YScore: number | undefined = 0.5,
             user2XScore: number | undefined = 0.5,
@@ -69,13 +75,10 @@ export class CompatibilityInsightManager {
             const gridData: TwoByTwoGridData = {
                 xAxis: createAxisData(insightData.xAxisLowLabel, insightData.xAxisHighLabel),
                 yAxis: createAxisData(insightData.yAxisLowLabel, insightData.yAxisHighLabel),
-                quadrantData: [insightData.q1Label, insightData.q2Label, insightData.q3Label, insightData.q4Label].map((x) => {
-                    if (typeof x == "undefined") {
-                        // Again, log the error
-                        return null;
-                    } else {
-                        return x;
-                    }
+                quadrantData: [insightData.q1Label, insightData.q2Label, insightData.q3Label, insightData.q4Label].map((element) => {
+                    // If element is undefined, return null, otherwise return the string value.
+                    // Some people say that unwrapping with a ternary is hard to read, but this is a very common pattern in Swift.
+                    return typeof element == "undefined" ? null : element;
                 }),
                 xAxisUser1Score: user1XScore,
                 yAxisUser1Score: user1YScore,
@@ -151,7 +154,7 @@ export class CompatibilityInsightManager {
             return "";
         }
 
-        // Given more time I would enforce a valid range between 0 and 1 on these parameters.
+        // In prod, I would enforce a valid range between 0 and 1 on these parameters.
         function getQuadrant(x: number | undefined, y: number | undefined): Quadrant {
             // In Swift, I would use a guard let { } here. There is probably a more TypeScript-y way to do this check!
             if (x && y) {
@@ -165,7 +168,8 @@ export class CompatibilityInsightManager {
                     return Quadrant.q4;
                 }
             } else {
-                throw new Error("Undefined");
+                // In a real project, I would log which value is undefined, but keeping it simple here.
+                throw new Error("Undefined score");
             }
         }
     }
