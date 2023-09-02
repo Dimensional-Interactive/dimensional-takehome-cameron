@@ -33,32 +33,39 @@ export class CompatibilityInsightManager {
         console.log(`retrieved ${user2ScaleScores.length} scores for user2Uid`);
         console.log(`retrieved ${compatibilityInsightComputeData.length} compatibility data.`);
 
-        const firstInsightData = compatibilityInsightComputeData[0];
+        const compatibilityInsights = compatibilityInsightComputeData.map((data) => {
+            return createCompatibilityInsight(data);
+        });
 
-        const xAxisSlug = firstInsightData.xAxisTraitSlug;
-        const yAxisSlug = firstInsightData.yAxisTraitSlug;
+        return compatibilityInsights;
 
-        const user1XScore = user1ScaleScores.find((element) => element.scaleSlug == xAxisSlug)?.score;
-        const user1YScore = user1ScaleScores.find((element) => element.scaleSlug == yAxisSlug)?.score;
-        const user1Quadrant = getQuadrant(user1XScore, user1YScore);
+        function createCompatibilityInsight(data: CompatibilityInsightComputeData): CompatibilityInsight {
+            const xAxisSlug = data.xAxisTraitSlug;
+            const yAxisSlug = data.yAxisTraitSlug;
 
-        const user2XScore = user2ScaleScores.find((element) => element.scaleSlug == xAxisSlug)?.score;
-        const user2YScore = user2ScaleScores.find((element) => element.scaleSlug == yAxisSlug)?.score;
-        const user2Quadrant = getQuadrant(user2XScore, user2YScore);
+            const user1XScore = user1ScaleScores.find((element) => element.scaleSlug == xAxisSlug)?.score;
+            const user1YScore = user1ScaleScores.find((element) => element.scaleSlug == yAxisSlug)?.score;
+            const user1Quadrant = getQuadrant(user1XScore, user1YScore);
 
-        const testInsight: CompatibilityInsight = {
-            analysisMarkdownString: getAnalysisMarkdownString(user1Quadrant, user2Quadrant, firstInsightData),
-            frameworkMarkdownString: function() {
-                if (typeof firstInsightData.analysisMarkdownString == "string") {
-                    return firstInsightData.analysisMarkdownString;
-                } else {
-                    return "";
-                }
-            }(),
-            gridData: createGridData(user1XScore, user1YScore, user2XScore, user2YScore, firstInsightData),
-        };
+            const user2XScore = user2ScaleScores.find((element) => element.scaleSlug == xAxisSlug)?.score;
+            const user2YScore = user2ScaleScores.find((element) => element.scaleSlug == yAxisSlug)?.score;
+            const user2Quadrant = getQuadrant(user2XScore, user2YScore);
 
-        return [testInsight];
+            const insight: CompatibilityInsight = {
+                analysisMarkdownString: getAnalysisMarkdownString(user1Quadrant, user2Quadrant, data),
+                frameworkMarkdownString: function() {
+                    if (typeof data.analysisMarkdownString == "string") {
+                        return data.analysisMarkdownString;
+                    } else {
+                        // This should fail more gracefully. Log the type and throw an error
+                        return "";
+                    }
+                }(),
+                gridData: createGridData(user1XScore, user1YScore, user2XScore, user2YScore, data),
+            };
+
+            return insight;
+        }
 
         function createGridData(user1XScore: number | undefined = 0.5,
             user1YScore: number | undefined = 0.5,
@@ -70,6 +77,7 @@ export class CompatibilityInsightManager {
                 yAxis: createAxisData(insightData.yAxisLowLabel, insightData.yAxisHighLabel),
                 quadrantData: [insightData.q1Label, insightData.q2Label, insightData.q3Label, insightData.q4Label].map((x) => {
                     if (typeof x == "undefined") {
+                        // Again, log the error
                         return null;
                     } else {
                         return x;
@@ -108,6 +116,8 @@ export class CompatibilityInsightManager {
                 break;
             case Quadrant.q2:
                 switch (user2Quadrant) {
+                case Quadrant.q1:
+                    return insightData.q1q2AnalysisString;
                 case Quadrant.q2:
                     return insightData.q2q2AnalysisString;
                 case Quadrant.q3:
@@ -119,6 +129,10 @@ export class CompatibilityInsightManager {
 
             case Quadrant.q3:
                 switch (user2Quadrant) {
+                case Quadrant.q1:
+                    return insightData.q1q3AnalysisString;
+                case Quadrant.q2:
+                    return insightData.q2q3AnalysisString;
                 case Quadrant.q3:
                     return insightData.q3q3AnalysisString;
                 case Quadrant.q4:
@@ -128,6 +142,12 @@ export class CompatibilityInsightManager {
 
             case Quadrant.q4:
                 switch (user2Quadrant) {
+                case Quadrant.q1:
+                    return insightData.q1q4AnalysisString;
+                case Quadrant.q2:
+                    return insightData.q2q4AnalysisString;
+                case Quadrant.q3:
+                    return insightData.q3q4AnalysisString;
                 case Quadrant.q4:
                     return insightData.q4q4AnalysisString;
                 }
@@ -141,11 +161,11 @@ export class CompatibilityInsightManager {
         function getQuadrant(x: number | undefined, y: number | undefined): Quadrant {
             // In Swift, I would use a guard let { } here. There is probably a more TypeScript-y way to do this check!
             if (x && y) {
-                if (x <= 0.5 && y > 0.5) {
+                if (x < 0.5 && y >= 0.5) {
                     return Quadrant.q1;
-                } else if (x > 0.5 && y > 0.5) {
+                } else if (x >= 0.5 && y >= 0.5) {
                     return Quadrant.q2;
-                } else if (x > 0.5 && y <= 0.5) {
+                } else if (x >= 0.5 && y < 0.5) {
                     return Quadrant.q3;
                 } else {
                     return Quadrant.q4;
